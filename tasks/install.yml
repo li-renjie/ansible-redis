@@ -1,0 +1,50 @@
+---
+
+- name: Extract tarball to remote host
+  unarchive:
+    src: "{{ download_filename }}"
+    dest: "/tmp"
+
+- name: Install dependencies
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - gcc
+    - make
+  when:
+  - ansible_os_family == "RedHat"
+
+- name: Compile Redis binary
+  command: make
+  args: 
+    chdir: "/tmp/redis-{{ version }}"
+    creates: "/tmp/redis-{{ version }}/src/redis-server"
+
+- name: Install redis binaries
+  command: make PREFIX={{ install_dir }} install
+  args: 
+    chdir: "/tmp/redis-{{ version }}"
+    creates: "{{ install_dir }}/bin/redis-server"
+
+- name: Create Redis group
+  group:
+    name: "{{ redis_group }}"
+    state: present
+
+- name: Create Redis user
+  user:
+    name: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    create_home: no
+    shell: /sbin/nologin
+    state: present
+
+# - Create symbolic link
+#   file:
+#     src: "{{ install_dir }}/bin"
+#     dest: ""
+
+- name: Add bin dir to $PATH
+  shell: |
+    echo "export PATH={{ install_dir }}/bin:$PATH" > /etc/profile.d/redis.sh

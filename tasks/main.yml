@@ -1,0 +1,39 @@
+---
+
+- include: initialize.yml
+
+- include: download.yml
+  run_once: true
+  delegate_to: 127.0.0.1
+  tags:
+  - download
+  - install
+
+- include: install.yml
+  tags:
+  - install
+
+- include: configure.yml
+  tags:
+  - install
+  - configure
+
+- include: cluster.yml
+  tags:
+  - install
+  - cluster
+  when: redis_cluster_enabled == "yes"
+
+- name: Restart redis
+  service:
+    name: "{{ systemd_service_name }}"
+    state: restarted
+  tags:
+  - never
+  - restart
+
+# # TODO: uninstall
+# - include: uninstall.yml
+#   tags:
+#   - never
+#   - uninstall

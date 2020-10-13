@@ -1,0 +1,38 @@
+[Unit]
+Description={{ systemd_service_name }} daemon
+After=network.target
+
+[Service]
+Type={{ systemd_service_type | default('simple') }}
+WorkingDirectory={{ systemd_working_dir | default('/') }}
+ExecStart={{ systemd_exec_start }}
+{% if systemd_exec_stop is defined %}
+ExecStop={{ systemd_exec_stop }}
+{% endif %}
+{% if systemd_restart is defined %}
+Restart={{ systemd_restart | default('on-failure') }}
+RestartSec={{ systemd_restart_sec | default('5s') }}
+{% endif %}
+{% if systemd_daemon_user is defined %}
+User={{ systemd_daemon_user }}
+{% endif %}
+{% if systemd_daemon_group is defined %}
+User={{ systemd_daemon_group }}
+{% endif %}
+
+{% if systemd_envs is defined %}
+{% for env in systemd_envs %}
+Environment="{{ env }}"
+{% endfor %}
+{% endif %}
+LimitCORE={{ systemd_limit_core | default('infinity') }}
+LimitNOFILE={{ systemd_no_file | default('1000000') }}
+
+{% if systemd_extra_configs is defined %}
+{% for config in systemd_extra_configs %}
+{{ config }}
+{% endfor %}
+{% endif %}
+[Install]
+WantedBy=multi-user.target
+
